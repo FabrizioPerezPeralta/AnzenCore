@@ -4,7 +4,6 @@ from psycopg2.extras import RealDictCursor
 
 class DBManager:
     def __init__(self):
-        # Cargamos la URL desde los Secrets
         try:
             self.db_url = st.secrets["DB_URL"]
         except Exception:
@@ -12,8 +11,7 @@ class DBManager:
             st.stop()
 
     def conectar(self):
-        # Conexión directa sin caché para probar estabilidad
-        # El puerto 6543 de Supabase ya trae los parámetros necesarios
+        # Esta función ahora es limpia y directa
         return psycopg2.connect(self.db_url)
 
     def ejecutar_query(self, query, params=None, es_select=False):
@@ -28,6 +26,7 @@ class DBManager:
                 conn.commit()
         except Exception as e:
             if conn: conn.rollback()
+            # Mostramos el error real en la web para depurar
             st.error(f"Error de base de datos: {e}")
         finally:
             if conn: conn.close()

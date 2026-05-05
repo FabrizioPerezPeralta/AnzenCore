@@ -4,20 +4,23 @@ class AnzenController:
     def __init__(self, model):
         self.model = model
 
-    def login(self, u, p):
-        res = self.model.auth_user(u, p)
+    def login(self, username, password):
+        res = self.model.authenticate(username, password)
         return res.data[0] if res.data else None
 
-    def signup(self, u, p):
+    def signup(self, username, password):
         try:
-            self.model.register_user(u, p)
+            self.model.register(username, password)
             return True
-        except: return False
+        except:
+            return False
 
-    def get_live_users(self):
-        # Umbral de 30 segundos para tiempo real
-        limit = (datetime.now() - timedelta(seconds=30)).isoformat()
-        return self.model.get_online_users(limit).data
+    def fetch_online_list(self):
+        # Umbral de 30 segundos para considerar online
+        umbral = (datetime.now() - timedelta(seconds=30)).isoformat()
+        res = self.model.get_online_users(umbral)
+        return res.data
 
-    def get_vulnerabilities(self):
-        return self.model.get_reports().data
+    def fetch_all_reports(self):
+        res = self.model.get_vulnerabilities()
+        return res.data

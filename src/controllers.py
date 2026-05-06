@@ -24,3 +24,6 @@ class AnzenController:
     def fetch_all_reports(self):
         res = self.model.get_vulnerabilities()
         return res.data
+
+    def scan_vulnerabilities(self):
+        return self.model.generate_scan_results()

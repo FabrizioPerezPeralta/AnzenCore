@@ -43,8 +43,8 @@ class AnzenAgent(App):
                     "nivel": item['n'],
                     "descripcion": item['d']
                 }
-                requests.post(f"{URL_SUPABASE}/rest/v1/vulnerabilidades", json=payload, 
-                             headers={"apikey": KEY_SUPABASE, "Authorization": f"Bearer {KEY_SUPABASE}"})
+                requests.post(f"{SUPABASE_URL}/rest/v1/vulnerabilidades", json=payload,
+                         headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"})
             self.log.text = "✅ Reporte enviado al Dashboard"
         except:
             self.log.text = "❌ Error de conexión"

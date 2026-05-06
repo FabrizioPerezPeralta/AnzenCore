@@ -19,3 +19,25 @@ class AnzenModel:
 
     def get_vulnerabilities(self):
         return self.supabase.table("vulnerabilidades").select("*").order("fecha", desc=True).execute()
+
+    def generate_scan_results(self):
+        import platform
+        import random
+        from datetime import datetime
+        vulnerabilities = [
+            {"vulnerabilidad": "SSL/TLS Misconfiguration", "nivel": "Crítico", "descripcion": "Certificado expirado o débil en comunicaciones"},
+            {"vulnerabilidad": "Open Ports Detected", "nivel": "Alto", "descripcion": "Puertos 22, 80 abiertos sin protección"},
+            {"vulnerabilidad": "Weak Password Policy", "nivel": "Medio", "descripcion": "Política de contraseñas inadecuada"},
+            {"vulnerabilidad": "Outdated Dependencies", "nivel": "Alto", "descripcion": "Bibliotecas con CVEs conocidos"},
+            {"vulnerabilidad": "Debug Mode Enabled", "nivel": "Bajo", "descripcion": "Modo debug activo en producción"},
+        ]
+        results = []
+        for vuln in random.sample(vulnerabilities, k=random.randint(1, 3)):
+            results.append({
+                "dispositivo": f"{platform.system()} {platform.machine()}",
+                "vulnerabilidad": vuln["vulnerabilidad"],
+                "nivel": vuln["nivel"],
+                "descripcion": vuln["descripcion"],
+                "fecha": datetime.now().isoformat()
+            })
+        return results

@@ -71,6 +71,11 @@ class AnzenView:
                 st.info("Esperando reportes del Agente Móvil...")
         with col_btn:
             st.write("")
+            target = st.text_input("Objetivo a escanear (URL, IP, etc.)", key="scan_target", placeholder="Ejemplo: https://ejemplo.com o 192.168.1.1")
             if st.button("🔍 Escanear", key="scan_btn", use_container_width=True):
-                st.session_state.scan_results = st.session_state.controller.scan_vulnerabilities()
+                if target:
+                    st.session_state.scan_results = st.session_state.controller.scan_vulnerabilities(target)
+                else:
+                    st.info("Escanneando dispositivo local...")
+                    st.session_state.scan_results = st.session_state.controller.scan_vulnerabilities()
                 st.rerun()

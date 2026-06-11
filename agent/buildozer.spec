@@ -1,6 +1,6 @@
 [app]
 title = AnzenCore Agent
-package.name = anzencore
+package.name = com.anzencore.agent
 source.dir = .
 version = 1.0
 requirements = python3,kivy,requests,urllib3,chardet,idna

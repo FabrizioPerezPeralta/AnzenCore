@@ -1,3 +1,4 @@
+import socket
 from datetime import datetime, timedelta
 
 class AnzenController:
@@ -9,11 +10,22 @@ class AnzenController:
         return res.data[0] if res.data else None
 
     def signup(self, username, password):
+        username = username.strip()
+        if not username or not password:
+            return False, "Completa usuario y contrasena."
+
         try:
+            existing = self.model.user_exists(username)
+            if existing.data:
+                return False, "El usuario ya existe."
             self.model.register(username, password)
-            return True
-        except:
-            return False
+            return True, "Registrado. Ingresa ahora."
+        except socket.gaierror:
+            return False, "No se pudo conectar con Supabase: revisa internet, DNS o la URL del proyecto."
+        except Exception as exc:
+            if "getaddrinfo failed" in str(exc):
+                return False, "No se pudo conectar con Supabase: revisa internet, DNS o la URL del proyecto."
+            return False, f"No se pudo crear el usuario: {exc}"
 
     def fetch_online_list(self):
         # Umbral de 30 segundos para considerar online

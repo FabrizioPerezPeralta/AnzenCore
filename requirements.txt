@@ -3,3 +3,9 @@ supabase
 pandas
 requests
 streamlit-autorefresh
+fastapi
+uvicorn
+pydantic
+pytest
+pytest-cov
+httpx

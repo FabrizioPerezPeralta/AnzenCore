@@ -1,12 +1,16 @@
 from supabase import create_client
 import streamlit as st
 
+
 class AnzenModel:
     def __init__(self):
         self.supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
     def authenticate(self, user, pw):
         return self.supabase.table("usuarios").select("*").eq("username", user).eq("password", pw).execute()
+
+    def user_exists(self, user):
+        return self.supabase.table("usuarios").select("id").eq("username", user).limit(1).execute()
 
     def register(self, user, pw):
         return self.supabase.table("usuarios").insert({"username": user, "password": pw}).execute()

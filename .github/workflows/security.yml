@@ -93,8 +93,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         with:
           args: >
-            -Dsonar.organization=gianfrancoarocutipa
-            -Dsonar.projectKey=anzencore
+            -Dsonar.organization=fabrizioperezperalta
+            -Dsonar.projectKey=FabrizioPerezPeralta_AnzenCore
             -Dsonar.qualitygate.wait=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

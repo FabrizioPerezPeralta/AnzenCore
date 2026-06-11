@@ -1,12 +1,16 @@
 [run]
 branch = True
 source =
-    app
+    .
 
 omit =
     tests/*
     setup.py
     __init__.py
+    app.py
+    src/*
+    agent/*
+    mobile/*
 
 [report]
 show_missing = True

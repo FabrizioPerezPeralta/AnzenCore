@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from hashlib import sha256
 
 from supabase import create_client
 
@@ -10,12 +11,18 @@ class SupabaseModel:
         settings = get_supabase_settings()
         self.supabase = create_client(settings["url"], settings["key"])
 
+    @staticmethod
+    def _hash_password(password: str) -> str:
+        """Return the SHA-256 hex digest of the password."""
+        return sha256(password.encode()).hexdigest()
+
     def authenticate(self, username, password):
+        hashed = self._hash_password(password)
         return (
             self.supabase.table("usuarios")
             .select("*")
             .eq("username", username)
-            .eq("password", password)
+            .eq("password", hashed)
             .execute()
         )
 
@@ -29,9 +36,10 @@ class SupabaseModel:
         )
 
     def register(self, username, password):
+        hashed = self._hash_password(password)
         return (
             self.supabase.table("usuarios")
-            .insert({"username": username, "password": password})
+            .insert({"username": username, "password": hashed})
             .execute()
         )
 

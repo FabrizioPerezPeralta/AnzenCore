@@ -261,7 +261,7 @@ class DashboardView:
         target = st.text_input(
             "Objetivo a escanear (URL, IP, etc.)",
             key="scan_target",
-            placeholder="Ejemplo: https://ejemplo.com o 192.168.1." + "1",
+            placeholder="Ejemplo: https://ejemplo.com o 192.168.1.1",
         )
         if st.button("Escanear", key="scan_btn", use_container_width=True):
             if target:

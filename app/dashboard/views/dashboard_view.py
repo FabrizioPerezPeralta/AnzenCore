@@ -14,6 +14,7 @@ NAV_ITEMS = [
     {"key": "comunidad",  "icon": "🌐", "label": "Comunidad"},
     {"key": "agente",     "icon": "🤖", "label": "Agente Móvil"},
     {"key": "manual",     "icon": "🔎", "label": "Escaneo Manual"},
+    {"key": "repo_calidad", "icon": "📦", "label": "Calidad Repo"},
 ]
 
 
@@ -188,6 +189,8 @@ class DashboardView:
             self.render_vulnerability_history(reports)
         elif section == "manual":
             self.render_manual_scan(controller)
+        elif section == "repo_calidad":
+            self.render_repo_quality(controller)
 
     # ── Inicio / Overview ─────────────────────────────────────────────────────
     def _render_inicio(self, user, reports, apk_scans):
@@ -663,3 +666,46 @@ class DashboardView:
                     user_id, target if target else None
                 )
             st.rerun()
+
+    # ── Calidad de repositorio (GitHub) ──────────────────────────────────────
+    def render_repo_quality(self, controller):
+        st.markdown("## 📦 Calidad de Repositorio (GitHub)")
+        st.markdown(
+            "<div style='color:#64748b; font-size:.88rem; margin-bottom:1rem;'>"
+            "Analiza un repositorio público de GitHub consumiendo la API de AnzenCore "
+            "(<code>/api/analizar</code>, <code>tipo_analisis=repo_github</code>)."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        col_input, col_btn = st.columns([3, 1])
+        with col_input:
+            repo_url = st.text_input(
+                "Repositorio de GitHub",
+                key="repo_github_url",
+                placeholder="https://github.com/usuario/repo",
+                label_visibility="collapsed",
+            )
+        with col_btn:
+            analizar_btn = st.button("🔍  Analizar", key="repo_github_btn", use_container_width=True)
+
+        if analizar_btn:
+            if not repo_url:
+                st.warning("Ingresa la URL de un repositorio de GitHub.")
+            else:
+                with st.spinner("⚙️  Analizando repositorio..."):
+                    ok, result = controller.analizar_repo_github(repo_url)
+                if ok:
+                    st.session_state.repo_quality_result = result
+                else:
+                    st.session_state.repo_quality_result = None
+                    st.error(f"❌ {result}")
+
+        result = st.session_state.get("repo_quality_result")
+        if result:
+            metricas = result.get("metricas_calidad") or {}
+            st.success(f"✅ Análisis completado: {metricas.get('proyecto') or result.get('objetivo')}")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("📏 Líneas de código", metricas.get("lineas_codigo", "-"))
+            c2.metric("🧩 Complejidad", metricas.get("complejidad", "-"))
+            c3.metric("🐞 Code smells", metricas.get("code_smells", "-"))

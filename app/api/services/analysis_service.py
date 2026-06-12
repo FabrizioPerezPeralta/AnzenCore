@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
 
+import requests
+
+from app.api.services.external_quality_client import ExternalQualityClient
 from app.dashboard.services.apk_analyzer import ApkAnalyzer
 from app.dashboard.services.vulnerability_scanner import VulnerabilityScanner
 
@@ -11,10 +14,15 @@ SEVERIDAD_ORDEN = {"Info": 0, "Bajo": 1, "Medio": 2, "Alto": 3, "Critico": 4}
 SOURCE_CODE_FINDING_TYPES = {"hardcoded_secret", "insecure_communication", "native_code"}
 
 
+class ExternalServiceError(Exception):
+    """El servicio externo de analisis de calidad no respondio o devolvio error."""
+
+
 class AnalysisService:
-    def __init__(self, apk_analyzer=None, vulnerability_scanner=None):
+    def __init__(self, apk_analyzer=None, vulnerability_scanner=None, external_quality_client=None):
         self.apk_analyzer = apk_analyzer or ApkAnalyzer()
         self.vulnerability_scanner = vulnerability_scanner or VulnerabilityScanner()
+        self.external_quality_client = external_quality_client or ExternalQualityClient()
 
     def analizar_apk(self, file_bytes, file_name):
         result = self.apk_analyzer.analyze(file_bytes)
@@ -37,6 +45,37 @@ class AnalysisService:
         resultados = self.vulnerability_scanner.scan(url)
         vulnerabilidades = [self._scan_item_to_item(i, item) for i, item in enumerate(resultados, start=1)]
         return self._build_response("url", url, None, vulnerabilidades)
+
+    def analizar_repo_github(self, repo_url):
+        try:
+            data = self.external_quality_client.analizar_repo(repo_url)
+        except requests.exceptions.HTTPError as exc:
+            raise ExternalServiceError(self._external_http_error_message(exc)) from exc
+        except requests.exceptions.RequestException as exc:
+            raise ExternalServiceError(
+                f"No se pudo contactar el servicio externo de analisis de calidad: {exc}"
+            ) from exc
+
+        response = self._build_response("repo_github", repo_url, None, [])
+        response["metricas_calidad"] = {
+            "proyecto": data.get("project_name"),
+            "lineas_codigo": data.get("loc"),
+            "complejidad": data.get("complexity"),
+            "code_smells": data.get("code_smells"),
+        }
+        return response
+
+    def _external_http_error_message(self, exc):
+        response = exc.response
+        try:
+            body = response.json()
+            mensaje = body.get("message") or body.get("detail") or body.get("error") or response.text
+        except ValueError:
+            mensaje = response.text
+        return (
+            f"El servicio externo de analisis de calidad respondio con error "
+            f"({response.status_code}): {mensaje}"
+        )
 
     def _finding_to_item(self, index, finding):
         return {

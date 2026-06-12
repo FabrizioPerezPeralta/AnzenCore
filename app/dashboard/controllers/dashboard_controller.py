@@ -1,6 +1,9 @@
 import socket
 from datetime import datetime, timedelta, timezone
 
+import requests
+
+from app.dashboard.services.anzen_api_client import AnzenApiClient
 from app.dashboard.services.apk_scan_service import ApkScanService
 from app.dashboard.services.report_export_service import ReportExportService
 from app.dashboard.services.vulnerability_scanner import VulnerabilityScanner
@@ -12,6 +15,7 @@ class DashboardController:
         self.vulnerability_scanner = VulnerabilityScanner()
         self.apk_scan_service = ApkScanService()
         self.report_export_service = ReportExportService()
+        self.anzen_api_client = AnzenApiClient()
 
     def login(self, username, password):
         res = self.model.authenticate(username, password)
@@ -86,6 +90,18 @@ class DashboardController:
 
         file_name = self.report_export_service.build_filename(scan, export_format)
         return file_name, data
+
+    def analizar_repo_github(self, repo_url):
+        try:
+            return True, self.anzen_api_client.analizar_repo_github(repo_url)
+        except requests.exceptions.HTTPError as exc:
+            try:
+                detail = exc.response.json().get("detail", str(exc))
+            except ValueError:
+                detail = str(exc)
+            return False, detail
+        except requests.exceptions.RequestException as exc:
+            return False, f"No se pudo conectar con la API de AnzenCore: {exc}"
 
     def create_apk_scan(self, user_id, uploaded_file):
         is_valid, message = self.apk_scan_service.validate_apk_file(uploaded_file)

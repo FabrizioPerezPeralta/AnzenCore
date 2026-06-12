@@ -12,6 +12,8 @@ class DashboardSettings:
     # Intervalo de ping/online-users en segundos (st.fragment run_every)
     # No causa parpadeo de página completa — solo refresca el bloque del monitor.
     ping_interval_s = 30
+    # Base URL de la API REST de AnzenCore (endpoint /api/analizar)
+    api_base_url = os.getenv("ANZENCORE_API_URL", "http://localhost:8000")
 
 
 def get_supabase_settings():

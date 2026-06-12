@@ -20,6 +20,13 @@ class ResumenAnalisis(BaseModel):
     conteo_por_severidad: dict[str, int]
 
 
+class MetricasCalidad(BaseModel):
+    proyecto: str | None = None
+    lineas_codigo: int | None = None
+    complejidad: int | None = None
+    code_smells: int | None = None
+
+
 class AnalisisResponse(BaseModel):
     estado: str
     tipo_analisis: str
@@ -27,4 +34,5 @@ class AnalisisResponse(BaseModel):
     tamano_bytes: int | None = None
     resumen: ResumenAnalisis
     vulnerabilidades: list[VulnerabilidadItem]
+    metricas_calidad: MetricasCalidad | None = None
     fecha_analisis: str

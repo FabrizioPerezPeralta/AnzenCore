@@ -1,4 +1,5 @@
 import pytest
+import requests
 from unittest.mock import MagicMock, patch
 from app.dashboard.controllers.dashboard_controller import DashboardController
 
@@ -11,7 +12,8 @@ def controller(mock_model):
     # Parcheamos los servicios internos para que sea una prueba unitaria pura
     with patch('app.dashboard.controllers.dashboard_controller.VulnerabilityScanner'), \
          patch('app.dashboard.controllers.dashboard_controller.ApkScanService'), \
-         patch('app.dashboard.controllers.dashboard_controller.ReportExportService'):
+         patch('app.dashboard.controllers.dashboard_controller.ReportExportService'), \
+         patch('app.dashboard.controllers.dashboard_controller.AnzenApiClient'):
         return DashboardController(mock_model)
 
 def test_login_success(controller, mock_model):
@@ -130,6 +132,29 @@ def test_create_apk_scan_db_error(controller, mock_model):
         ok, msg = controller.create_apk_scan(1, mock_file)
         assert ok is False
         assert "No se pudo registrar" in msg
+
+def test_analizar_repo_github_success(controller):
+    with patch.object(controller.anzen_api_client, 'analizar_repo_github') as mock_call:
+        mock_call.return_value = {"estado": "ok", "metricas_calidad": {"loc": 100}}
+        ok, result = controller.analizar_repo_github("https://github.com/usuario/repo")
+        assert ok is True
+        assert result["metricas_calidad"]["loc"] == 100
+        mock_call.assert_called_once_with("https://github.com/usuario/repo")
+
+def test_analizar_repo_github_http_error(controller):
+    response = MagicMock()
+    response.json.return_value = {"detail": "Debes indicar 'url' con el repositorio de GitHub."}
+    error = requests.exceptions.HTTPError(response=response)
+    with patch.object(controller.anzen_api_client, 'analizar_repo_github', side_effect=error):
+        ok, message = controller.analizar_repo_github("")
+        assert ok is False
+        assert "repositorio de GitHub" in message
+
+def test_analizar_repo_github_connection_error(controller):
+    with patch.object(controller.anzen_api_client, 'analizar_repo_github', side_effect=requests.exceptions.ConnectionError("boom")):
+        ok, message = controller.analizar_repo_github("https://github.com/usuario/repo")
+        assert ok is False
+        assert "No se pudo conectar" in message
 
 def test_create_apk_scan_rls_error(controller, mock_model):
     mock_file = MagicMock()

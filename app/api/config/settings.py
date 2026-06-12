@@ -11,3 +11,6 @@ class ApiSettings:
         for origin in os.getenv("CORS_ORIGINS", "*").split(",")
         if origin.strip()
     ]
+    anzen_external_url = os.getenv(
+        "ANZEN_EXTERNAL_URL", "https://anestatico.onrender.com/api/analysis/external/github"
+    )

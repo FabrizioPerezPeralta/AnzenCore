@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from hashlib import sha256
+from hashlib import pbkdf2_hmac
 
 from supabase import create_client
 
@@ -13,8 +13,9 @@ class SupabaseModel:
 
     @staticmethod
     def _hash_password(password: str) -> str:
-        """Return the SHA-256 hex digest of the password."""
-        return sha256(password.encode()).hexdigest()
+        """Hash password with PBKDF2-HMAC-SHA256 (key-stretching, Sonar S5344 compliant)."""
+        dk = pbkdf2_hmac("sha256", password.encode(), b"anzencore", 260_000)
+        return dk.hex()
 
     def authenticate(self, username, password):
         hashed = self._hash_password(password)

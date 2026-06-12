@@ -57,10 +57,10 @@ class ApkAnalyzer:
     )
 
     url_pattern = re.compile(r"https?://[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]+")
-    secret_patterns = [
-        re.compile(r"(?i)(api[_-]?key|apikey|secret|token|bearer)\s*[:=]\s*['\"]?([A-Za-z0-9_\-\.]{16,})"),
-        re.compile(r"sb_publishable_[A-Za-z0-9_\-]+"),
-        re.compile(r"eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+"),
+    secret_patterns = [  # nosonar - these regexes detect secrets in APK files, not store credentials
+        re.compile(r"(?i)(api[_-]?key|apikey|secret|token|bearer)\s*[:=]\s*['\"]?([A-Za-z0-9_\-\.]{16,})"),  # nosonar
+        re.compile(r"sb_publishable_[A-Za-z0-9_\-]+"),  # nosonar
+        re.compile(r"eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+"),  # nosonar
     ]
     ignored_http_prefixes = (
         "http://www.apache.org/licenses/",

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from hashlib import pbkdf2_hmac
+from hashlib import pbkdf2_hmac, sha256
 
 from supabase import create_client
 
@@ -17,15 +17,45 @@ class SupabaseModel:
         dk = pbkdf2_hmac("sha256", password.encode(), b"anzencore", 260_000)
         return dk.hex()
 
+    @staticmethod
+    def _hash_password_legacy(password: str) -> str:
+        """Legacy SHA-256 hash used before PBKDF2 migration."""
+        return sha256(password.encode()).hexdigest()
+
+    def _upgrade_password(self, user_id: str, password: str) -> None:
+        """Silently re-hash a legacy password to PBKDF2 on first successful login."""
+        new_hash = self._hash_password(password)
+        self.supabase.table("usuarios").update({"password": new_hash}).eq("id", user_id).execute()
+
     def authenticate(self, username, password):
+        # 1. Try current PBKDF2 hash
         hashed = self._hash_password(password)
-        return (
+        res = (
             self.supabase.table("usuarios")
             .select("*")
             .eq("username", username)
             .eq("password", hashed)
             .execute()
         )
+        if res.data:
+            return res
+
+        # 2. Fall back to legacy SHA-256 hash (users created before PBKDF2 migration)
+        legacy_hash = self._hash_password_legacy(password)
+        res_legacy = (
+            self.supabase.table("usuarios")
+            .select("*")
+            .eq("username", username)
+            .eq("password", legacy_hash)
+            .execute()
+        )
+        if res_legacy.data:
+            # Upgrade stored hash transparently so next login uses PBKDF2
+            self._upgrade_password(res_legacy.data[0]["id"], password)
+            return res_legacy
+
+        return res  # empty result → login failed
+
 
     def user_exists(self, username):
         return (
@@ -60,18 +90,31 @@ class SupabaseModel:
             .execute()
         )
 
-    def get_vulnerabilities(self):
+    def get_vulnerabilities(self, user_id):
         return (
             self.supabase.table("vulnerabilidades")
             .select("*")
+            .eq("user_id", user_id)
             .order("fecha", desc=True)
             .execute()
         )
 
-    def get_apk_scans(self):
+    def save_vulnerabilities(self, rows: list) -> None:
+        """Inserta uno o varios reportes en la tabla vulnerabilidades."""
+        if not rows:
+            return
+        self.supabase.table("vulnerabilidades").insert(rows).execute()
+
+    def get_apk_scans(self, user_id):
         return (
-            self.supabase.table("apk_scan_summary")
-            .select("*")
+            self.supabase.table("apk_scans")
+            .select(
+                "id, user_id, file_name, file_size_bytes, file_hash_sha256, "
+                "package_name, app_name, version_name, version_code, "
+                "status, severity_max, findings_count, summary, error_message, "
+                "created_at, started_at, finished_at"
+            )
+            .eq("user_id", user_id)
             .order("created_at", desc=True)
             .execute()
         )

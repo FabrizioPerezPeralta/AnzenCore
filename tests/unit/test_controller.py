@@ -80,19 +80,19 @@ def test_fetch_methods(controller, mock_model):
     assert controller.fetch_apk_findings(1) == []
     assert controller.fetch_apk_artifacts(1) == []
 
-def test_build_report_export_csv(controller):
-    with patch.object(controller.report_export_service, 'build_csv') as mock_csv, \
+def test_build_report_export_pdf(controller):
+    with patch.object(controller.report_export_service, 'build_pdf') as mock_pdf, \
          patch.object(controller.report_export_service, 'build_filename') as mock_name:
-        mock_csv.return_value = b"data"
-        mock_name.return_value = "file.csv"
+        mock_pdf.return_value = b"pdf_data"
+        mock_name.return_value = "file.pdf"
         
-        name, data = controller.build_report_export({"id": 1}, [], [], "csv", 1)
-        assert name == "file.csv"
-        assert data == b"data"
+        name, data = controller.build_report_export({"id": 1}, [], [], "pdf", 1)
+        assert name == "file.pdf"
+        assert data == b"pdf_data"
 
 def test_build_report_export_invalid_format(controller):
     with pytest.raises(ValueError, match="Formato de exportacion no soportado"):
-        controller.build_report_export({}, [], [], "pdf", 1)
+        controller.build_report_export({}, [], [], "invalid_format", 1)
 
 def test_create_apk_scan_invalid_file(controller):
     mock_file = MagicMock()

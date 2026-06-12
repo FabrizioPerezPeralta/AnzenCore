@@ -9,7 +9,9 @@ class DashboardSettings:
     layout = "wide"
     apk_path = "assets/AnzenCore_Agent.apk"
     apk_filename = "AnzenCore.apk"
-    refresh_interval_ms = 5000
+    # Intervalo de ping/online-users en segundos (st.fragment run_every)
+    # No causa parpadeo de página completa — solo refresca el bloque del monitor.
+    ping_interval_s = 30
 
 
 def get_supabase_settings():

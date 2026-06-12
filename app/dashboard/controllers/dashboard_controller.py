@@ -43,15 +43,31 @@ class DashboardController:
         res = self.model.get_online_users(threshold)
         return res.data
 
-    def fetch_all_reports(self):
-        res = self.model.get_vulnerabilities()
+    def fetch_all_reports(self, user_id):
+        res = self.model.get_vulnerabilities(user_id)
+        if res.data:
+            from app.dashboard.services.vulnerability_scanner import _enrich
+            return [_enrich(row.get("vulnerabilidad", ""), row) for row in res.data]
         return res.data
 
-    def scan_vulnerabilities(self, target=None):
-        return self.vulnerability_scanner.scan(target)
+    def scan_vulnerabilities(self, user_id: str, target=None):
+        results = self.vulnerability_scanner.scan(target)
+        if results:
+            # Filtrar columnas para guardar únicamente campos válidos en la tabla vulnerabilidades
+            db_columns = {"user_id", "dispositivo", "vulnerabilidad", "nivel", "descripcion", "fecha"}
+            rows_to_save = []
+            for row in results:
+                clean_row = {k: v for k, v in row.items() if k in db_columns}
+                clean_row["user_id"] = user_id
+                rows_to_save.append(clean_row)
+            try:
+                self.model.save_vulnerabilities(rows_to_save)
+            except Exception:
+                pass  # Si falla el guardado, igual devolvemos los resultados en memoria
+        return results
 
-    def fetch_apk_scans(self):
-        res = self.model.get_apk_scans()
+    def fetch_apk_scans(self, user_id):
+        res = self.model.get_apk_scans(user_id)
         return res.data
 
     def fetch_apk_findings(self, scan_id):
@@ -63,10 +79,8 @@ class DashboardController:
         return res.data
 
     def build_report_export(self, scan, findings, artifacts, export_format, user_id):
-        if export_format == "csv":
-            data = self.report_export_service.build_csv(findings)
-        elif export_format == "json":
-            data = self.report_export_service.build_json(scan, findings, artifacts)
+        if export_format == "pdf":
+            data = self.report_export_service.build_pdf(scan, findings, artifacts)
         else:
             raise ValueError("Formato de exportacion no soportado.")
 

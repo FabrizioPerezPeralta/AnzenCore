@@ -672,8 +672,8 @@ class DashboardView:
         st.markdown("## 📦 Calidad de Repositorio (GitHub)")
         st.markdown(
             "<div style='color:#64748b; font-size:.88rem; margin-bottom:1rem;'>"
-            "Analiza un repositorio público de GitHub consumiendo la API de AnzenCore "
-            "(<code>/api/analizar</code>, <code>tipo_analisis=repo_github</code>)."
+            "Analiza un repositorio público de GitHub consumiendo el servicio externo "
+            "de análisis de calidad."
             "</div>",
             unsafe_allow_html=True,
         )
@@ -703,9 +703,8 @@ class DashboardView:
 
         result = st.session_state.get("repo_quality_result")
         if result:
-            metricas = result.get("metricas_calidad") or {}
-            st.success(f"✅ Análisis completado: {metricas.get('proyecto') or result.get('objetivo')}")
+            st.success(f"✅ Análisis completado: {result.get('proyecto') or repo_url}")
             c1, c2, c3 = st.columns(3)
-            c1.metric("📏 Líneas de código", metricas.get("lineas_codigo", "-"))
-            c2.metric("🧩 Complejidad", metricas.get("complejidad", "-"))
-            c3.metric("🐞 Code smells", metricas.get("code_smells", "-"))
+            c1.metric("📏 Líneas de código", result.get("lineas_codigo", "-"))
+            c2.metric("🧩 Complejidad", result.get("complejidad", "-"))
+            c3.metric("🐞 Code smells", result.get("code_smells", "-"))

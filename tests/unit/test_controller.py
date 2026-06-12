@@ -135,26 +135,47 @@ def test_create_apk_scan_db_error(controller, mock_model):
 
 def test_analizar_repo_github_success(controller):
     with patch.object(controller.anzen_api_client, 'analizar_repo_github') as mock_call:
-        mock_call.return_value = {"estado": "ok", "metricas_calidad": {"loc": 100}}
+        mock_call.return_value = {
+            "status": "success",
+            "project_name": "usuario/repo",
+            "loc": 100,
+            "complexity": 10,
+            "code_smells": 3,
+        }
         ok, result = controller.analizar_repo_github("https://github.com/usuario/repo")
         assert ok is True
-        assert result["metricas_calidad"]["loc"] == 100
+        assert result["proyecto"] == "usuario/repo"
+        assert result["lineas_codigo"] == 100
+        assert result["code_smells"] == 3
         mock_call.assert_called_once_with("https://github.com/usuario/repo")
+
+def test_analizar_repo_github_normaliza_code_smells_objeto(controller):
+    with patch.object(controller.anzen_api_client, 'analizar_repo_github') as mock_call:
+        mock_call.return_value = {
+            "status": "success",
+            "project_name": "usuario/repo",
+            "loc": 100,
+            "complexity": 10,
+            "code_smells": {"smells": ["a", "b"], "metrics": {}, "files": []},
+        }
+        ok, result = controller.analizar_repo_github("https://github.com/usuario/repo")
+        assert ok is True
+        assert result["code_smells"] == 2
 
 def test_analizar_repo_github_http_error(controller):
     response = MagicMock()
-    response.json.return_value = {"detail": "Debes indicar 'url' con el repositorio de GitHub."}
+    response.json.return_value = {"detail": "Repositorio no encontrado."}
     error = requests.exceptions.HTTPError(response=response)
     with patch.object(controller.anzen_api_client, 'analizar_repo_github', side_effect=error):
-        ok, message = controller.analizar_repo_github("")
+        ok, message = controller.analizar_repo_github("https://github.com/usuario/repo")
         assert ok is False
-        assert "repositorio de GitHub" in message
+        assert "Repositorio no encontrado" in message
 
 def test_analizar_repo_github_connection_error(controller):
     with patch.object(controller.anzen_api_client, 'analizar_repo_github', side_effect=requests.exceptions.ConnectionError("boom")):
         ok, message = controller.analizar_repo_github("https://github.com/usuario/repo")
         assert ok is False
-        assert "No se pudo conectar" in message
+        assert "No se pudo contactar" in message
 
 def test_create_apk_scan_rls_error(controller, mock_model):
     mock_file = MagicMock()

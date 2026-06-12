@@ -61,9 +61,14 @@ class AnalysisService:
             "proyecto": data.get("project_name"),
             "lineas_codigo": data.get("loc"),
             "complejidad": data.get("complexity"),
-            "code_smells": data.get("code_smells"),
+            "code_smells": self._code_smells_count(data.get("code_smells")),
         }
         return response
+
+    def _code_smells_count(self, code_smells):
+        if isinstance(code_smells, dict):
+            return len(code_smells.get("smells", []))
+        return code_smells
 
     def _external_http_error_message(self, exc):
         response = exc.response

@@ -36,6 +36,24 @@ def test_analizar_repo_github_success(service):
     )
 
 
+def test_analizar_repo_github_normaliza_code_smells_objeto(service):
+    service.external_quality_client.analizar_repo.return_value = {
+        "status": "success",
+        "project_name": "MiRepo",
+        "loc": 3885,
+        "complexity": 603,
+        "code_smells": {
+            "smells": ["Long method: foo", "Long method: bar"],
+            "metrics": {"nom": 1, "npm": 1, "noa": 0, "cloc": 1},
+            "files": [],
+        },
+    }
+
+    result = service.analizar_repo_github("https://github.com/usuario/repo")
+
+    assert result["metricas_calidad"]["code_smells"] == 2
+
+
 def test_analizar_repo_github_http_error(service):
     response = MagicMock(status_code=500)
     response.json.return_value = {"detail": "Error interno del analizador externo"}

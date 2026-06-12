@@ -93,15 +93,26 @@ class DashboardController:
 
     def analizar_repo_github(self, repo_url):
         try:
-            return True, self.anzen_api_client.analizar_repo_github(repo_url)
+            data = self.anzen_api_client.analizar_repo_github(repo_url)
         except requests.exceptions.HTTPError as exc:
             try:
                 detail = exc.response.json().get("detail", str(exc))
             except ValueError:
                 detail = str(exc)
-            return False, detail
+            return False, f"El servicio externo de analisis de calidad respondio con error: {detail}"
         except requests.exceptions.RequestException as exc:
-            return False, f"No se pudo conectar con la API de AnzenCore: {exc}"
+            return False, f"No se pudo contactar el servicio externo de analisis de calidad: {exc}"
+
+        code_smells = data.get("code_smells")
+        if isinstance(code_smells, dict):
+            code_smells = len(code_smells.get("smells", []))
+
+        return True, {
+            "proyecto": data.get("project_name"),
+            "lineas_codigo": data.get("loc"),
+            "complejidad": data.get("complexity"),
+            "code_smells": code_smells,
+        }
 
     def create_apk_scan(self, user_id, uploaded_file):
         is_valid, message = self.apk_scan_service.validate_apk_file(uploaded_file)
